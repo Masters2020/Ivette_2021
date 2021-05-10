@@ -207,11 +207,13 @@ def hyperparametertuning(train, val, nr_jobs, pretrained_embeddings=TEXT.vocab.v
   """Function for the hyperparameter tuning of the RNN glove model"""
   results = []
   for i in range(nr_jobs):
+    # getting random hyperparameter settings
     batch_size_RNN, pos_weight,RNN_type, RNN_epochs, RNN_lr, RNN_wd, RNN_layers, RNN_units, dropout = random_search_RNN()
     performance = {'batch_size_RNN': batch_size_RNN, 'RNN_epochs': RNN_epochs,
                   'pos_weight': pos_weight,'RNN_type': RNN_type, 'RNN_lr': RNN_lr, 'RNN_wd': RNN_wd, 
                   'RNN_layers': RNN_layers, 'RNN_units': RNN_units, 'dropout': dropout}
     print(f"Nr = {i+1}, using the following hyperparameters: \n {performance}")
+    # splitting train and val in batches
     train_iter = torchtext.legacy.data.BucketIterator(train, batch_size=batch_size_RNN,
                                                       sort_key=lambda x: len(x.data),
                                                       sort_within_batch=False,
@@ -240,6 +242,7 @@ def hyperparametertuning(train, val, nr_jobs, pretrained_embeddings=TEXT.vocab.v
     criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(np.array([pos_weight]))).cuda()
     logging.basicConfig(level=logging.INFO)
     logging.info("Epoch Loss Val_loss Auc Val_auc")
+    ## getting val and train loss & auc
     for epoch in range(1, RNN_epochs+1):
       optimizer.zero_grad()
       loss, auc = train_epoch(model, train_iter, optimizer, criterion)
@@ -249,18 +252,18 @@ def hyperparametertuning(train, val, nr_jobs, pretrained_embeddings=TEXT.vocab.v
       history['val_auc'].append(val_auc)
       history['val_loss'].append(val_loss)
       logging.info(f"{epoch:3d} {loss:.3f} {val_loss:.3f} {auc:.3f} {val_auc:.3f}")
-    last_val_auc = history['val_auc'][-1]
+    last_val_auc = history['val_auc'][-1] # last auc of last epoch
     last_tr_auc = history['auc'][-1]
     performance['val_auc'] = last_val_auc
     performance['tr_auc'] = last_tr_auc
     results.append(performance)
     toCSV = results
-    keys = toCSV[0].keys()
-    with open('/content/drive/My Drive/Thesis/RNNsuper-nomax_840B-2.csv', 'w', newline='')  as output_file:
+    keys = toCSV[0].keys() # saving results
+    with open('/content/drive/My Drive/Thesis/RNN_glove.csv', 'w', newline='')  as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(toCSV)
     #print(results)
-  highest = sorted(results,  key=lambda x: x['val_auc'], reverse = True )[0]
+  highest = sorted(results,  key=lambda x: x['val_auc'], reverse = True )[0] # hyperparameters with highest performance
  # print(highest)
   return results, highest

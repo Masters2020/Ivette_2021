@@ -259,7 +259,7 @@ def hyperparametertuning(train, val, nr_jobs, pretrained_embeddings=TEXT.vocab.v
     results.append(performance)
     toCSV = results
     keys = toCSV[0].keys() # saving results
-    with open('/content/drive/My Drive/Thesis/RNN_glove.csv', 'w', newline='')  as output_file:
+    with open('RNN_glove.csv', 'w', newline='')  as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(toCSV)

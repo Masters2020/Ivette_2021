@@ -180,7 +180,7 @@ def evaluate(model, iterator, criterion):
                 predictions = np.concatenate((predictions, prediction))
                 labels = np.concatenate((labels, label))
 
-    return loss/len(iterator), roc_auc_score(labels, predictions)
+        return loss/len(iterator), roc_auc_score(labels, predictions)
 
 import numpy as np
 def random_search_LR():
@@ -201,3 +201,66 @@ def random_search_RNN():
     RNN_units = np.random.randint(5, 51)
     dropout = np.round(np.random.uniform(0, 0.5),2)
     return batch_size_RNN, pos_weight, RNN_type, RNN_epochs, RNN_lr, RNN_wd, RNN_layers, RNN_units, dropout
+
+def hyperparametertuning(train, val, nr_jobs, pretrained_embeddings=TEXT.vocab.vectors, 
+                         input_dim=len(TEXT.vocab), embedding_dim = 300):
+  """Function for the hyperparameter tuning of the RNN glove model"""
+  results = []
+  for i in range(nr_jobs):
+    batch_size_RNN, pos_weight,RNN_type, RNN_epochs, RNN_lr, RNN_wd, RNN_layers, RNN_units, dropout = random_search_RNN()
+    performance = {'batch_size_RNN': batch_size_RNN, 'RNN_epochs': RNN_epochs,
+                  'pos_weight': pos_weight,'RNN_type': RNN_type, 'RNN_lr': RNN_lr, 'RNN_wd': RNN_wd, 
+                  'RNN_layers': RNN_layers, 'RNN_units': RNN_units, 'dropout': dropout}
+    print(f"Nr = {i+1}, using the following hyperparameters: \n {performance}")
+    train_iter = torchtext.legacy.data.BucketIterator(train, batch_size=batch_size_RNN,
+                                                      sort_key=lambda x: len(x.data),
+                                                      sort_within_batch=False,
+                                                      device='cuda') ##TES
+    val_iter = torchtext.legacy.data.BucketIterator(val, batch_size=batch_size_RNN,
+                                                    sort_key=lambda x: len(x.data),
+                                                    sort_within_batch=False,
+                                                    device='cuda') ##TEST
+    input_dim = input_dim
+    embedding_dim = embedding_dim
+    model = Recurrent(recurrent = RNN_type, input_dim=input_dim, embedding_dim = embedding_dim, 
+                      hidden_dim = RNN_units, num_layers=RNN_layers, output_dim=1, dropout = dropout, embedding = vocab.Vectors).cuda() #RNN_layers
+    
+    ## updating model embedding with glove embedding weights
+    pretrained_embeddings = TEXT.vocab.vectors
+    model.embedding.weight.data = pretrained_embeddings.cuda() 
+
+    unknown_index = TEXT.vocab.stoi[TEXT.unk_token] # get index of unknown token
+    padding_index = TEXT.vocab.stoi[TEXT.pad_token] # get index of padding token
+    model.embedding.weight.data[unknown_index] = torch.zeros(embedding_dim) #change values to zeros
+    model.embedding.weight.data[padding_index] = torch.zeros(embedding_dim)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr = RNN_lr , weight_decay= RNN_wd)
+    history = dict(auc=[], val_auc=[], loss=[], val_loss=[])
+
+    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(np.array([pos_weight]))).cuda()
+    logging.basicConfig(level=logging.INFO)
+    logging.info("Epoch Loss Val_loss Auc Val_auc")
+    for epoch in range(1, RNN_epochs+1):
+      optimizer.zero_grad()
+      loss, auc = train_epoch(model, train_iter, optimizer, criterion)
+      history['auc'].append(auc)
+      history['loss'].append(loss)
+      val_loss, val_auc = evaluate(model, val_iter, criterion)
+      history['val_auc'].append(val_auc)
+      history['val_loss'].append(val_loss)
+      logging.info(f"{epoch:3d} {loss:.3f} {val_loss:.3f} {auc:.3f} {val_auc:.3f}")
+    last_val_auc = history['val_auc'][-1]
+    last_tr_auc = history['auc'][-1]
+    performance['val_auc'] = last_val_auc
+    performance['tr_auc'] = last_tr_auc
+    results.append(performance)
+    toCSV = results
+    keys = toCSV[0].keys()
+    with open('/content/drive/My Drive/Thesis/RNNsuper-nomax_840B-2.csv', 'w', newline='')  as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(toCSV)
+    #print(results)
+  highest = sorted(results,  key=lambda x: x['val_auc'], reverse = True )[0]
+ # print(highest)
+  return results, highest

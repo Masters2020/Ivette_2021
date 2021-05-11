@@ -109,7 +109,7 @@ SEED = 2021
 torch.manual_seed(SEED)
 torch.cuda.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
-results, highest = hyperparametertuning(train, val, 1, TEXT = TEXT, pretrained_embeddings = TEXT.vocab.vectors, input_dim=len(TEXT.vocab))
+results, highest = hyperparametertuning(train, val, 150, TEXT = TEXT, pretrained_embeddings = TEXT.vocab.vectors, input_dim=len(TEXT.vocab))
 
 # getting the best hyperparameter values for training and evaluating
 batch_size_RNN = list(highest.values())[0]

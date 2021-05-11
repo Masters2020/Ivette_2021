@@ -1,8 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
+"""
+Created on Fri Apr  2 18:19:43 2021
 
-# In[2]:
-
+@author: Ivette Bonestroo
+"""
 
 import pickle
 from baseline_functions import preprocessing2, remover, random_search_LR
@@ -24,11 +24,6 @@ with open(path, 'rb') as file:
 
 with open(path2, 'rb') as file:
     test = pickle.loads(file.read())
-
-
-# In[45]:
-
-
 
 ## merging labels and transcripts together and merging the labels 2 and 3 (conspiracy labels)
 transtr, labeltr = pickle_splitter(train)
@@ -63,8 +58,6 @@ print(f'number of labels 2: {train_3labels.count(2) + test_3labels.count(2)}')
 print(f'number of labels 3: {train_3labels.count(3) + test_3labels.count(3)}')
 total_labels_old = train_3labels + test_3labels
 
-
-
 train_df = pd.DataFrame(transtr, columns = ['data'])
 train_df['labels'] = y_tr
 test_df = pd.DataFrame(transtest, columns = ['data'])
@@ -80,7 +73,6 @@ print()
 train_df = remover(train_df, 50)
 test_df= remover(test_df, 50)
 print(f"length train: {len(train_df)}, length test: {len(test_df)}")
-
 
 train2labels = train_df['labels'].tolist()
 test2labels = test_df['labels'].tolist()
@@ -98,9 +90,7 @@ print('length train df, val df and test df')
 print(len(train_df), len(val_df), len(test_df))
 
 
-# In[54]:
-
-
+# checking punctuation in transcripts
 punctuation_tr = []
 for t in train_df['data']:
     if ',' in t or '.' in t:
@@ -122,11 +112,8 @@ train_val = pd.concat([train_df, val_df])
 print(punctuation_tr)
 print(punctuation_val)
 
-
-# In[37]:
-
-
-
+## graphs
+# target distribution graph 3 labels
 ax = sns.countplot(x = total_labels_old, hue = total_labels_old, dodge = False)
 h,l = ax.get_legend_handles_labels()
 labels = ['Non-conspiracy', 'Falsifiable conspiracy', 'Unfalsifiable conspiracy']
@@ -135,13 +122,7 @@ plt.xlabel('Labels')
 plt.ylabel('Count')
 #plt.title('Train+val: Target distribution')
 
-
-# In[38]:
-
-
-## graphs
-#Target distribution graph
-
+# graph of target distribution 2 labels
 ax = sns.countplot(x = train_val['labels'], hue = train_val['labels'], dodge = False)
 h,l = ax.get_legend_handles_labels()
 labels = ['Non-conspiracy', 'Conspiracy']
@@ -150,11 +131,7 @@ plt.xlabel('Labels')
 plt.ylabel('Count')
 #plt.title('Train+val: Target distribution')
 
-
-# In[55]:
-
-
-##punctuation graph
+# punctuation graph
 ax = sns.countplot(x=train_val['punctuation'], hue=train_val['punctuation'], dodge=False)
 h,l = ax.get_legend_handles_labels()
 labels = ['With punctuation', 'Without punctuation']
@@ -163,11 +140,7 @@ ax.legend(h,labels,title="Punctuation", loc="upper right")
 plt.xlabel('Punctuation')
 plt.ylabel('Count')
 
-
-# In[36]:
-
-
-## graph of length
+# graph of length
 length_t = sorted([len(t.split()) for t in train_val['data']])
 #print(sum(length_t)/len(length_t))
 plt.plot(length_t)
@@ -179,28 +152,6 @@ plt.ylabel('Word length')
 print(min(length_t))
 print(max(length_t))
 
-plt.subplots(1, 3)
-plt.subplot(1, 3, 1)
-train_val['data'].apply(lambda x: len(x.split())).plot(kind='hist');
-plt.title('total');
-plt.subplot(1, 3, 2)
-train_df['data'].apply(lambda x: len(x.split())).plot(kind='hist');
-plt.title('training set')
-plt.subplot(1, 3, 3)
-val_df['data'].apply(lambda x: len(x.split())).plot(kind='hist');
-plt.title('validation set')
-
-
-# In[ ]:
-
-
-
-
-
-# In[9]:
-
-
-## getting Tfidf
 
 def logistic_regression_tuning():
     max_features = random_search_LR()
@@ -219,18 +170,15 @@ def logistic_regression_tuning():
     performance['auc'] = auc
     return performance
 
+#hyperparametertuning
 results = []
 for i in range(26):
     performance = logistic_regression_tuning()
     print(performance)
     results.append(performance)
 print(results)
-               
 
-
-# In[10]:
-
-
+# saving results of hyperparameter tuning
 toCSV = results
 keys = toCSV[0].keys()
 with open('LR_results.csv', 'w', newline='')  as output_file:
@@ -241,32 +189,21 @@ highest = sorted(results,  key=lambda x: x['auc'], reverse = True )[0]
 print(highest)
 best_max_features = highest['max_features']
 
-
-# In[11]:
-
-
+# training with train+val
 TV = TfidfVectorizer(tokenizer=preprocessing2, max_features = best_max_features)
 X_trainval = TV.fit_transform(trainval_df['data'].tolist())
 X_test = TV.transform(test_df['data'].tolist())
 
-## logistic regression 
+## logistic regression evaluation
 logreg = LogisticRegression(random_state = 2021)
 logreg.fit(X_trainval, trainval_df['labels'])
 preds = logreg.predict(X_test)
 val_auc = roc_auc_score(test_df['labels'].tolist(), preds)
 print('validation auc', val_auc) #0.8281959766385465
 
-
-# In[12]:
-
-
+#training auc
 preds = logreg.predict(X_trainval)
 train_auc = roc_auc_score(trainval_df['labels'].tolist(), preds)
 print('training auc', train_auc) #0.9275635930047695
-
-
-# In[ ]:
-
-
 
 

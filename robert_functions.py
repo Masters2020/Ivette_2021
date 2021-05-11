@@ -65,7 +65,7 @@ def chunks(text, length=200, overlap_percentage = 0.25):
     nr = math.ceil(len(text.split())/length_new_text) ##number of chunks in text according to hyperparameters length and overlap
   else: 
     nr = 1
-  ## chunking text in parts
+  # chunking text 
   for w in range(nr):
     if w == 0:
       if nr == 1: # if transcript is less than max_length we do not have to select a part of the transcript
@@ -130,10 +130,10 @@ import time
 import datetime
 def elapsed_time(elapsed):
     """"Takes a time in seconds and returns a string hours:minutes:seconds"""
-    #timing in seconds
+    # time in seconds
     elapsed_rounded = int(round((elapsed)))
     
-    #formatting as hours:minutes:seconds
+    # formatting as hours:minutes:seconds
     return str(datetime.timedelta(seconds=elapsed_rounded))
 
     
@@ -159,8 +159,8 @@ def BERT_model(model, train_dataloader, train_dataloader_noshuffle, val_dataload
     losses = []
     optimizer = AdamW(model.parameters(), lr = lr)
 
-    #creating a schedule with a learning rate that decreases linearly from the 
-    #initial lr set in the optimizer to 0
+    # creating a schedule with a learning rate that decreases linearly from the 
+    # initial lr set in the optimizer to 0
     total_steps = len(train_dataloader) * epochs
     scheduler = get_linear_schedule_with_warmup(optimizer, 
                                                 num_warmup_steps = 0, 
@@ -205,7 +205,7 @@ def BERT_model(model, train_dataloader, train_dataloader_noshuffle, val_dataload
             total_loss += loss.item()
             loss.backward()
 
-            #clipping to prevent exploding gradients problem
+            # clipping to prevent exploding gradients problem
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
             scheduler.step()
@@ -217,7 +217,7 @@ def BERT_model(model, train_dataloader, train_dataloader_noshuffle, val_dataload
             tmp_train_accuracy = accuracy(logits, label_ids)
             train_accuracy += tmp_train_accuracy # per batch
 
-            # Track the number of batches
+            # track the number of batches
             nb_train_steps += 1
         print('Average loss of epoch' , epoch_i, 'is:', np.mean(losses))
         print("Train accuracy: {0:.2f}".format(train_accuracy/nb_train_steps))
@@ -323,7 +323,7 @@ def performance_average_bert(logitslabels, labels_transcripts, index):
   """Getting the BERT mean decision rule performance for each transcript by 
   averaging the results of each chunk"""
   logitslabels2 = np.argmax(logitslabels, axis=1).flatten() ## prediction labels
-  x = dict() ## creating dictionary with index as keys and predictions as labels 
+  x = dict() # creating dictionary with index as keys and predictions as labels 
   # this is done to average the right predictions beloning to the same index/transcript
   for i, l in zip(index, logitslabels2):
     if i in x.keys():
@@ -338,7 +338,7 @@ def performance_average_bert(logitslabels, labels_transcripts, index):
   acc_bert = accuracy_score(new, labels_transcripts)
   return auc_bert, acc_bert 
 
-#creating new dataset for train and val
+# creating new dataset for train and val
 import pandas as np
 import numpy as np
 def RNN_df(embedding, index_list, original_df, length): 
@@ -384,8 +384,8 @@ def padding_emb(embedding, max_len, length_chunks):
   length = len(embedding)
   padding_len = max_len - length
   for i in range(padding_len):
-    embedding = np.vstack((embedding, np.zeros(768))) ## 768 is length of each embedding 
-    #or length of parameters in last layer of BERT model
+    embedding = np.vstack((embedding, np.zeros(768))) # 768 is length of each embedding 
+    # or length of parameters in last layer of BERT model
   return embedding
 
 import torch.optim 
@@ -397,11 +397,11 @@ class Recurrent(nn.Module):
     self.recurrent = recurrent(input_dim, hidden_dim, num_layers = num_layers, batch_first=True, dropout=dropout)
     self.linear = nn.Linear(hidden_dim, output_dim)
   def forward(self, text, seq_len):
-    ## packing for masking
+    # packing for masking
     packed = torch.nn.utils.rnn.pack_padded_sequence(text, seq_len.cpu().numpy(), batch_first=True, enforce_sorted=True)
     output, h_n = self.recurrent(packed)
     if type(self.recurrent) == nn.LSTM:
-      last = h_n[0][-1,:,:] ## lstm also returns memory cell output. We don't want that
+      last = h_n[0][-1,:,:] ## lstm also returns memory cell output at h_n[1]. We don't want that
     else:
       last = h_n[-1,:,:]
     return self.linear(last)
@@ -415,7 +415,7 @@ def train_epoch(model, dataloader, optimizer, criterion, device):
   auc."""
   epoch_loss = 0
   epoch_acc = 0 
-  c = 0
+  c = 0 # count for concatenating batches for predictions and labels (auc)
 
   model.train()
   for batch in dataloader:
@@ -481,12 +481,12 @@ import numpy as np
 logging.basicConfig(level=logging.INFO)
 def train_RNN(model, train_it, val_it, pos_weight, optimizer, epochs, device):
   """Training RNN model"""
-  ## setting loss function
+  # setting loss function
   criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(np.array([pos_weight])).cuda())
   history = dict(auc=[], val_auc=[], loss=[], val_loss=[])
   logging.info("Epoch Loss Val_loss Auc Val_auc")
   device = 'cuda'
-  ## training RNN and getting auc and loss for both train and vall
+  # training RNN and getting auc and loss for both train and vall
   for epoch in range(1, epochs+1):
     optimizer.zero_grad()
     loss, auc = train_epoch(model, train_it, optimizer, criterion, device)
@@ -511,7 +511,7 @@ def remover_empty_rows(df):
 from torch import nn
 import numpy as np
 def random_search_param():
-  """Random search function"""
+  """Random search function for RoBERT"""
   length_chunks = np.random.randint(100,501)
   percentage_overlap = np.round(np.random.uniform(0.1, 0.4),2)
   bert_lr = np.random.uniform(5e-5, 1e-5) #based upon author's recommendation (Devlin et al. 2019)
@@ -537,7 +537,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from transformers import DistilBertModel, DistilBertForSequenceClassification
 import csv
 def hyperparametertuning(train_df, val_df, tokenizer, nr_jobs):
-
+  """Hyperparameter tuning of RoBERT"""
   results = []
   for i in range(nr_jobs):
     length_chunks, percentage_overlap, bert_lr, bert_epochs, batch_size_RNN, pos_weight,RNN_type, RNN_epochs, RNN_lr, RNN_wd, RNN_layers, RNN_units, dropout = random_search_param()
@@ -547,7 +547,7 @@ def hyperparametertuning(train_df, val_df, tokenizer, nr_jobs):
                   'RNN_layers': RNN_layers, 'RNN_units': RNN_units, 'dropout': dropout}
     print(f"Nr_jobs = {i+1}, using the following hyperparameters: \n {performance}")
 
-    ## Chunking
+    # chunking
     print("Chunking...")
     df_new_train = apply_chunking(train_df, length_chunks, percentage_overlap)
     df_new_val = apply_chunking(val_df, length_chunks, percentage_overlap)
@@ -565,6 +565,7 @@ def hyperparametertuning(train_df, val_df, tokenizer, nr_jobs):
     val_inputIDs, val_masks = BERT_tokenizer(df_new_val, tokenizer, max_len = length_chunks)
     print("Tokenizing done.")
     print()
+    
     ### BERT
     print("Transforming into tensors...")
     train_labels = df_new_train['labels'].tolist()
@@ -623,7 +624,6 @@ def hyperparametertuning(train_df, val_df, tokenizer, nr_jobs):
     train_labels2 = torch.FloatTensor(train_labels2)
     train_data2 = TensorDataset(train_inputs2,train_labels2, seq_list_tr)
     train_dataloader2 = DataLoader(train_data2, batch_size=int(batch_size_RNN))
-
 
     # same for validation set: padding, tensors and sequence list for masking
     val_df_RNN['padded_data'] = val_df_RNN['embedding'].apply(padding_emb, args=(val_emb_maxlen, length_chunks))

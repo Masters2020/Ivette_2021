@@ -5,7 +5,6 @@ Created on Fri May  7 11:23:24 2021
 @author: Ivette Bonestroo
 """
 
-
 import pickle
 
 path = 'training_data.pickle'
@@ -131,9 +130,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model1_bert = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased', output_hidden_states=True).to(device)
 model1_bert.resize_token_embeddings(len(tokenizer)) 
 tr_emb, test_emb, model, test_logits_list, tr_logits_list = BERT_model(model1_bert, trainval_dataloader,trainval_dataloader_noshuffle, test_dataloader, epochs = bert_epochs, 
-                                lr = bert_lr, device = device, train_inputs = trainval_inputs , 
-                                val_inputs = test_inputs, train_masks = trainval_masks, 
-                                val_masks = test_masks) 
+                                lr = bert_lr, device = device) 
 print("Getting BERT embeddings done.")
 
 test_auc_bert, test_acc_bert = performance_average_bert(test_logits_list, test_df['labels'].tolist(), df_new_test['index'].tolist())
@@ -228,9 +225,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model1_bert = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased', output_hidden_states=True).to(device)
 model1_bert.resize_token_embeddings(len(tokenizer)) 
 tr_emb, test_emb, model, test_logits_list, tr_logits_list = BERT_model(model1_bert, trainval_dataloader,trainval_dataloader_noshuffle, test_dataloader, epochs = bert_epochs, 
-                                lr = bert_lr, device = device, train_inputs = trainval_inputs , 
-                                val_inputs = test_inputs, train_masks = trainval_masks, 
-                                val_masks = test_masks) 
+                                lr = bert_lr, device = device) 
 print("Getting BERT embeddings done.")
 
 test_auc_bert, test_acc_bert = performance_average_bert(test_logits_list, test_df['labels'].tolist(), df_new_test['index'].tolist())

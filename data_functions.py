@@ -2,7 +2,7 @@
 """
 Created on Thu Apr 22 11:36:49 2021
 
-@author: Ivette-PC
+@author: Ivette Bonestroo
 """
 def pickle_splitter(pickle):
   """Splits the loaded pickle in data and labels"""

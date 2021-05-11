@@ -1,5 +1,8 @@
-### From: Ivette Bonestroo
+"""
+Created on Tue Apr  6 15:16:24 2021
 
+@author: Ivette Bonestroo
+"""
 
 def remover_transcripts(trans, label):  
   """Removes transcripts that are shorther than 50 words"""

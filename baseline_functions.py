@@ -130,7 +130,6 @@ def train_epoch(model, iterator, optimizer, criterion):
 
     model.train() 
     for batch in iterator:
-    #print(batch)
         optimizer.zero_grad()
         pred = model(batch.data).squeeze(1)
 
@@ -165,8 +164,8 @@ def evaluate(model, iterator, criterion):
     model.eval()
     with torch.no_grad():
         for batch in iterator:
-            pred = model(batch.data).squeeze(1)
-            loss += criterion(pred, batch.labels).item()
+            pred = model(batch.data).squeeze(1) #getting predictions
+            loss += criterion(pred, batch.labels).item() #loss function
 
             ## concatenating all predictions and labels from each batch for AUC
             label = batch.labels.cpu()
@@ -253,18 +252,18 @@ def hyperparametertuning(train, val, nr_jobs, TEXT, pretrained_embeddings,
     ## getting val and train loss & auc
     for epoch in range(1, RNN_epochs+1):
       optimizer.zero_grad()
-      loss, auc, acc = train_epoch(model, train_iter, optimizer, criterion)
+      loss, auc, acc = train_epoch(model, train_iter, optimizer, criterion) #training
       history['auc'].append(auc)
       history['loss'].append(loss)
       history['acc'].append(acc)
-      val_loss, val_auc, val_acc = evaluate(model, val_iter, criterion)
+      val_loss, val_auc, val_acc = evaluate(model, val_iter, criterion) #evaluating
       history['val_auc'].append(val_auc)
       history['val_loss'].append(val_loss)
       history['val_acc'].append(val_acc)
       logging.info(f"{epoch:3d} {loss:.3f} {val_loss:.3f} {auc:.3f} {val_auc:.3f}  {acc:.3f} {val_acc:.3f}")
     last_val_auc = history['val_auc'][-1] # last auc of last epoch
     last_tr_auc = history['auc'][-1]
-    last_val_acc = history['val_acc'][-1] # last auc of last epoch
+    last_val_acc = history['val_acc'][-1] # last acc of last epoch
     last_tr_acc = history['acc'][-1]
     performance['val_auc'] = last_val_auc
     performance['tr_auc'] = last_tr_auc

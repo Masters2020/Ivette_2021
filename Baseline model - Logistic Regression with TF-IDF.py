@@ -12,7 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import TfidfVectorizer
 from matplotlib import pyplot as plt
 import seaborn as sns
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, accuracy_score
 import numpy as np
 import csv
 
@@ -199,11 +199,15 @@ logreg = LogisticRegression(random_state = 2021)
 logreg.fit(X_trainval, trainval_df['labels'])
 preds = logreg.predict(X_test)
 val_auc = roc_auc_score(test_df['labels'].tolist(), preds)
-print('validation auc', val_auc) #0.8281959766385465
+print('validation auc', val_auc) 
+val_acc = accuracy_score(test_df['labels'].tolist(), preds)
+print('validation accuracy', val_acc) 
 
-#training auc
+#training auc/acc
 preds = logreg.predict(X_trainval)
 train_auc = roc_auc_score(trainval_df['labels'].tolist(), preds)
-print('training auc', train_auc) #0.9275635930047695
+print('training auc', train_auc) 
+train_acc = accuracy_score(trainval_df['labels'].tolist(), preds)
+print('training accuracy', train_acc) 
 
 

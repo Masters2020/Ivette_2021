@@ -409,7 +409,7 @@ class Recurrent(nn.Module):
       last = h_n[-1,:,:]
     return self.linear(last)
 
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, accuracy_score
 import torch.optim 
 import torch.nn as nn
 import numpy as np
@@ -445,8 +445,9 @@ def train_epoch(model, dataloader, optimizer, criterion, device):
       labels = np.concatenate((labels, label))
 
     epoch_loss += loss.item()
-  return epoch_loss / len(dataloader), roc_auc_score(labels, predictions)
+  return epoch_loss / len(dataloader), roc_auc_score(labels, predictions), accuracy_score(labels, predictions)
 
+from sklearn.metrics import roc_auc_score, accuracy_score
 import torch.optim 
 import torch.nn as nn
 import numpy as np
@@ -475,7 +476,7 @@ def evaluate(model, dataloader, criterion, device):
       else:
         predictions = np.concatenate((predictions, prediction))
         labels = np.concatenate((labels, label))
-    return loss/len(dataloader), roc_auc_score(labels, predictions)
+    return loss/len(dataloader), roc_auc_score(labels, predictions), accuracy_score(labels, predictions)
 
 import logging
 import torch.optim 
@@ -484,24 +485,28 @@ import numpy as np
 logging.basicConfig(level=logging.INFO)
 def train_RNN(model, train_it, val_it, pos_weight, optimizer, epochs, device):
   """Training RNN model"""
-  # setting loss function
+  ## setting loss function
   criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(np.array([pos_weight])).cuda())
-  history = dict(auc=[], val_auc=[], loss=[], val_loss=[])
-  logging.info("Epoch Loss Val_loss Auc Val_auc")
+  history = dict(auc=[], val_auc=[], loss=[], val_loss=[], acc=[], val_acc=[])
+  logging.info("Epoch Loss Val_loss Auc Val_auc Acc Val_acc")
   device = 'cuda'
-  # training RNN and getting auc and loss for both train and vall
+  ## training RNN and getting auc and loss for both train and vall
   for epoch in range(1, epochs+1):
     optimizer.zero_grad()
-    loss, auc = train_epoch(model, train_it, optimizer, criterion, device)
+    loss, auc, acc = train_epoch(model, train_it, optimizer, criterion, device)
     history['auc'].append(auc)
     history['loss'].append(loss)
-    val_loss, val_auc = evaluate(model, val_it, criterion, device)
+    history['acc'].append(acc)
+    val_loss, val_auc, val_acc = evaluate(model, val_it, criterion, device)
     history['val_auc'].append(val_auc)
     history['val_loss'].append(val_loss)
-    logging.info(f"{epoch:3d} {loss:.3f} {val_loss:.3f} {auc:.3f} {val_auc:.3f}")
+    history['val_acc'].append(val_acc)
+    logging.info(f"{epoch:3d} {loss:.3f} {val_loss:.3f} {auc:.3f} {val_auc:.3f} {acc:.3f} {val_acc:.3f}")
   last_tr_auc = history['auc'][-1] # last auc from last epoch
-  last_val_auc = history['val_auc'][-1] # last auc from last epoch
-  return history, last_tr_auc, last_val_auc
+  last_val_auc = history['val_auc'][-1]
+  last_val_acc = history['val_acc'][-1] 
+  last_tr_acc = history['acc'][-1]# last auc from last epoch
+  return history, last_tr_auc, last_val_auc, last_tr_acc, last_val_acc
 
 import pandas as pd
 def remover_empty_rows(df):
@@ -638,14 +643,17 @@ def hyperparametertuning(train_df, val_df, tokenizer, nr_jobs):
     val_data2 = TensorDataset(val_inputs2, val_labels2, seq_list_val)
     val_dataloader2 = DataLoader(val_data2, batch_size=len(val_inputs2))
 
+    #training RNN with embeddings
     input_dim = train_inputs2.shape[2]
     print(" Training RNN...")
     model2 = Recurrent(recurrent = RNN_type, input_dim=input_dim, hidden_dim = RNN_units, num_layers=RNN_layers, output_dim=1, dropout = dropout).to('cuda') #RNN_layers
     optimizer = torch.optim.Adam(model2.parameters(), lr = RNN_lr, weight_decay= RNN_wd)
-    history, tr_auc, val_auc = train_RNN(model2, train_dataloader2 ,val_dataloader2, pos_weight, optimizer, epochs=RNN_epochs, device = device)
+    history, tr_auc, val_auc, tr_acc, val_acc = train_RNN(model2, train_dataloader2 ,val_dataloader2, pos_weight, optimizer, epochs=RNN_epochs, device = device)
     print("RNN done.")
     performance['val_AUC'] = val_auc
     performance['tr_AUC'] = tr_auc
+    performance['val_acc'] = val_acc
+    performance['tr_acc'] = tr_acc
     print()
     #print('Hyperparameters and performance:', performance)
     results.append(performance)

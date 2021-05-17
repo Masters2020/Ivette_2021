@@ -58,13 +58,15 @@ train_df.head()
 import torch
 import random
 import numpy as np
-
+#hyperparameter tuning RoBERT/BERT mean decision rule
 seed = 2021
 random.seed(seed)
 torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed) 
 results, highest_robert, highest_bert = hyperparametertuning(train_df, val_df, tokenizer, 150)
 
+
+#RoBERT: best values
 length_chunks =  list(highest_robert.values())[0]
 percentage_overlap = list(highest_robert.values())[1]
 bert_lr = list(highest_robert.values())[2]
@@ -171,12 +173,15 @@ input_dim = trainval_inputs2.shape[2]
 print(" Training RNN...")
 model2 = Recurrent(recurrent = RNN_type, input_dim=input_dim, hidden_dim = RNN_units, num_layers=RNN_layers, output_dim=1, dropout = dropout).to('cuda') #RNN_layers
 optimizer = torch.optim.Adam(model2.parameters(), lr = RNN_lr, weight_decay= RNN_wd)
-history, tr_auc, test_auc = train_RNN(model2, trainval_dataloader2 ,test_dataloader2, pos_weight, optimizer, epochs=RNN_epochs, device = device)
+history, tr_auc, test_auc, tr_acc, test_acc  = train_RNN(model2, trainval_dataloader2 ,test_dataloader2, pos_weight, optimizer, epochs=RNN_epochs, device = device)
 print("RNN done.")
 print()
 print('test auc RoBERT:', test_auc)
 print('train auc RoBERT:', tr_auc)
+print('test acc RoBERT:', test_acc)
+print('train acc RoBERT:', tr_acc)
 
+#bert mean decision rule: best values
 length_chunks = list(highest_bert.values())[0]
 percentage_overlap = list(highest_bert.values())[1]
 bert_lr = list(highest_bert.values())[2]
@@ -232,3 +237,5 @@ test_auc_bert, test_acc_bert = performance_average_bert(test_logits_list, test_d
 tr_auc_bert, tr_acc_bert = performance_average_bert(tr_logits_list, trainval_df['labels'].tolist(), df_new_trainval['index'].tolist())
 print('test auc BERT:', test_auc_bert)
 print('train auc BERT:', tr_auc_bert)
+print('test acc BERT:', test_acc_bert)
+print('train acc BERT:', tr_acc_bert)

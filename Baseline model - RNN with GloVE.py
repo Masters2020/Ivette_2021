@@ -131,6 +131,7 @@ trainval = torchtext.legacy.data.TabularDataset(path='trainval.csv',format='csv'
 test = torchtext.legacy.data.TabularDataset(path='test.csv',format='csv',skip_header=True,fields=fields2)
 TEXT2.build_vocab(trainval,vectors=glove,unk_init=torch.Tensor.zero_) 
 LABEL2.build_vocab(trainval)
+
 import csv
 import torch
 import random

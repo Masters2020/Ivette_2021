@@ -97,7 +97,6 @@ import pandas as pd
 def remover(df, length=200):
     """Remove transcripts that have less than length words"""
     condition = df.data.apply(lambda x: len(x.split())) >= length
-#  print(sum(condition==False))
     df = df[condition]
     return df
 
@@ -235,7 +234,7 @@ def hyperparametertuning(train, val, nr_jobs, TEXT, pretrained_embeddings,
     model = Recurrent(recurrent = RNN_type, input_dim=input_dim, embedding_dim = embedding_dim, 
                       hidden_dim = RNN_units, num_layers=RNN_layers, output_dim=1, dropout = dropout, embedding = vocab.Vectors).cuda() #RNN_layers
     
-    ## updating model embedding with glove embedding weights
+    # updating model embedding with glove embedding weights
     model.embedding.weight.data = pretrained_embeddings.cuda() 
 
     unknown_index = TEXT.vocab.stoi[TEXT.unk_token] # get index of unknown token
@@ -276,7 +275,5 @@ def hyperparametertuning(train, val, nr_jobs, TEXT, pretrained_embeddings,
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(toCSV)
-    #print(results)
   highest = sorted(results,  key=lambda x: x['val_auc'], reverse = True )[0] # hyperparameters with highest performance
- # print(highest)
   return results, highest

@@ -121,7 +121,7 @@ class Recurrent(nn.Module):
         return self.linear(last)
 
 import numpy as np
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, accuracy_score
 def train_epoch(model, iterator, optimizer, criterion):
     """Train `model` in batches from `iterator` and return training loss and 
     AUC score."""
@@ -154,10 +154,10 @@ def train_epoch(model, iterator, optimizer, criterion):
         optimizer.step()
         epoch_loss += loss.item()
 
-    return epoch_loss / len(iterator), roc_auc_score(labels, predictions)
+    return epoch_loss / len(iterator), roc_auc_score(labels, predictions), accuracy_score(labels,predictions)
 
 import numpy as np
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, accuracy_score
 def evaluate(model, iterator, criterion):
     """Evaluate `model` on all batches from `iterator`."""
     loss = 0
@@ -180,7 +180,7 @@ def evaluate(model, iterator, criterion):
                 predictions = np.concatenate((predictions, prediction))
                 labels = np.concatenate((labels, label))
 
-        return loss/len(iterator), roc_auc_score(labels, predictions)
+        return loss/len(iterator), roc_auc_score(labels, predictions), accuracy_score(labels,predictions)
 
 import numpy as np
 def random_search_LR():
@@ -245,25 +245,31 @@ def hyperparametertuning(train, val, nr_jobs, TEXT, pretrained_embeddings,
     model.embedding.weight.data[padding_index] = torch.zeros(embedding_dim)
 
     optimizer = torch.optim.Adam(model.parameters(), lr = RNN_lr , weight_decay= RNN_wd)
-    history = dict(auc=[], val_auc=[], loss=[], val_loss=[])
+    history = dict(auc=[], val_auc=[], loss=[], val_loss=[], acc=[], val_acc=[])
 
     criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(np.array([pos_weight]))).cuda()
     logging.basicConfig(level=logging.INFO)
-    logging.info("Epoch Loss Val_loss Auc Val_auc")
+    logging.info("Epoch Loss Val_loss Auc Val_auc Acc Val_acc")
     ## getting val and train loss & auc
     for epoch in range(1, RNN_epochs+1):
       optimizer.zero_grad()
-      loss, auc = train_epoch(model, train_iter, optimizer, criterion)
+      loss, auc, acc = train_epoch(model, train_iter, optimizer, criterion)
       history['auc'].append(auc)
       history['loss'].append(loss)
-      val_loss, val_auc = evaluate(model, val_iter, criterion)
+      history['acc'].append(acc)
+      val_loss, val_auc, val_acc = evaluate(model, val_iter, criterion)
       history['val_auc'].append(val_auc)
       history['val_loss'].append(val_loss)
-      logging.info(f"{epoch:3d} {loss:.3f} {val_loss:.3f} {auc:.3f} {val_auc:.3f}")
+      history['val_acc'].append(val_acc)
+      logging.info(f"{epoch:3d} {loss:.3f} {val_loss:.3f} {auc:.3f} {val_auc:.3f}  {acc:.3f} {val_acc:.3f}")
     last_val_auc = history['val_auc'][-1] # last auc of last epoch
     last_tr_auc = history['auc'][-1]
+    last_val_acc = history['val_acc'][-1] # last auc of last epoch
+    last_tr_acc = history['acc'][-1]
     performance['val_auc'] = last_val_auc
     performance['tr_auc'] = last_tr_auc
+    performance['val_acc'] = last_val_acc
+    performance['tr_acc'] = last_tr_acc
     results.append(performance)
     toCSV = results
     keys = toCSV[0].keys() # saving results

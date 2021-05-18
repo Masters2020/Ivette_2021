@@ -139,6 +139,8 @@ test_auc_bert, test_acc_bert = performance_average_bert(test_logits_list, test_d
 tr_auc_bert, tr_acc_bert = performance_average_bert(tr_logits_list, trainval_df['labels'].tolist(), df_new_trainval['index'].tolist())
 print('test auc BERT:', test_auc_bert)
 print('train auc BERT:', tr_auc_bert)
+print('test acc BERT:', test_acc_bert)
+print('train acc BERT:', tr_acc_bert)
 
 print()
 ### RNN

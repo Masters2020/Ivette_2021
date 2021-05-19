@@ -1,5 +1,4 @@
 # Thesis_Ivette_2021
-(Code for accuracy still needs to be added to the py files of the models)
 
 Chronological order of steps in this thesis:
 1. Extract the transcripts and add the labels
@@ -8,5 +7,6 @@ Chronological order of steps in this thesis:
 4. Preprocess each model according to their own preprocessing steps
 5. Tune, train and validate the models
 
-All the files needed to execute these steps can be found in this github repository.
 GloVe embeddings can be found here: https://nlp.stanford.edu/projects/glove/
+All the files needed to execute these steps can be found in this github repository.
+

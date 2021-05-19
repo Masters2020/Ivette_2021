@@ -9,5 +9,5 @@ Chronological order of steps in this thesis:
 
 GloVe embeddings can be found here: https://nlp.stanford.edu/projects/glove/
 
-All the files needed to execute these steps can be found in this github repository.
+All files needed to execute these steps can be found in this github repository.
 

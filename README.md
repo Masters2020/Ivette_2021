@@ -7,6 +7,6 @@ Chronological order of steps in this thesis:
 4. Preprocess each model according to their own preprocessing steps
 5. Tune, train and validate the models
 
-GloVe embeddings can be found here: https://nlp.stanford.edu/projects/glove/
+GloVe embeddings can be found here: https://nlp.stanford.edu/projects/glove/ \n
 All the files needed to execute these steps can be found in this github repository.
 
